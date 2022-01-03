@@ -1,26 +1,19 @@
 {% macro account_table(account_list, level) -%}
         {% for account in account_list %}
-        <tbody class="labels">
-        <tr>
-            <td colspan="2">
-                <label for="{{ account["name"] }}">{{ account["name"] }}</label>
-                <input type="checkbox" name="{{ account["name"] }}" id="{{ account["name"] }}" data-toggle="toggle">
-            </td>
+        <tr data-tt-id="{{ account['name'] }}">
+            <td colspan="2">{{ account["name"] }}</td>
             <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
             <td>{% if account["sub_total"] != 0 %}{{ account["sub_total"] }}{% endif %}</td>
         </tr>
-        </tbody>
         {% if account["splits"]|length > 0 %}
-        <tbody class="hide">
-                {% for split in account["splits"] %}
-                <tr>
-                    <td width="100px">{{split["date"]}}</td>
-                    <td>{{split["description"]}}</td>
-                    <td>{{split["value"]}}</td>
-                    <td></td>
-                </tr>
-                {% endfor %}
-        </tbody>
+        {% for split in account["splits"] %}
+        <tr data-tt-id="{{ account['name'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['name'] }}">
+            <td width="100px">{{split["date"]}}</td>
+            <td>{{split["description"]}}</td>
+            <td>{{split["value"]}}</td>
+            <td></td>
+        </tr>
+        {% endfor %}
         {% endif %}
 
         {% if account["children"]|length > 0 %}
@@ -33,14 +26,21 @@
 <html>
 
 <head>
-    <title>Test</title>
-    <link rel="stylesheet" href="tax_report.css"/>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
-    <script type="text/javascript">
+    <title>Tax report</title>
+    
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.js'></script>
+    <script src='https://code.jquery.com/ui/1.13.0/jquery-ui.min.js'></script>
+    
+    <script src="jquery-treetable-3.2.0/jquery.treetable.js"></script>
+    <link href="jquery-treetable-3.2.0/css/jquery.treetable.css" rel="stylesheet" type="text/css" />
+    <link href="jquery-treetable-3.2.0/css/jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
+    <script>
         $(document).ready(function() {
-	        $('[data-toggle="toggle"]').change(function() {
-		        $(this).parents().next('.hide').toggle();
+            {% for account in summary %}
+            $("#account_info_{{account['name']}}").treetable({
+                expandable:true
             });
+            {% endfor %}
         });
     </script>
 </head>
@@ -49,8 +49,7 @@
     <h2>Income</h2>
     {% for account in summary %}
         <h3>{{ account["name"] }}</h3>
-        {% if account["children"]|length > 0 %}
-        <table class="styled-table">
+        <table class="styled-table" id="account_info_{{account['name']}}">
             <thead>
                 <tr>
                     <th colspan="2">Description</th>
@@ -62,7 +61,6 @@
                 {{ account_table(account["children"], 1) }}
             </tbody>
         </table>
-        {% endif %}
     {% endfor %}
 </body>
 
