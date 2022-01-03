@@ -1,34 +1,27 @@
-{% macro account_table(account_list) -%}
-<table class="styled-table">
-    <tbody>
+{% macro account_table(account_list, level) -%}
         {% for account in account_list %}
+        <tbody class="labels">
         <tr>
-            <td>{{ account["name"] }}</td>
-            <td width="60px">{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
-            <td>
-                {% if account["splits"]|length > 0 %}
-                <table>
-                    <body>
-                        {% for split in account["splits"] %}
-                        <tr>
-                            <td>{{split["date"]}}</td>
-                            <td>{{split["description"]}}</td>
-                            <td>{{split["value"]}}</td>
-                        </tr>
-                        {% endfor %}
-                    </body>
-                </table>
-                {% endif %}
-            </td>
-            {% if account["children"]|length > 0 %}
-            <td>
-                {{ account_table(account["children"]) }}
-            </td>
-            {% endif %}
+            <td colspan="2">{{ account["name"] }}</td>
+            <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
         </tr>
-    </tbody>
+        </tbody>
+        {% if account["splits"]|length > 0 %}
+        <tbody class="hide">
+                {% for split in account["splits"] %}
+                <tr>
+                    <td>{{split["date"]}}</td>
+                    <td>{{split["description"]}}</td>
+                    <td>{{split["value"]}}</td>
+                </tr>
+                {% endfor %}
+        </tbody>
+        {% endif %}
+
+        {% if account["children"]|length > 0 %}
+            {{ account_table(account["children"], level+1) }}
+        {% endif %}
     {% endfor %}
-</table>
 {%- endmacro %}
 
 
@@ -41,7 +34,16 @@
 
 <body>
     <h2>Income</h2>
-    {{ account_table(summary) }}
+    {% for account in summary %}
+        <h3>{{ account["name"] }}</h3>
+        {% if account["children"]|length > 0 %}
+        <table class="styled-table">
+            <tbody>
+                {{ account_table(account["children"], 1) }}
+            </tbody>
+        </table>
+        {% endif %}
+    {% endfor %}
 </body>
 
 </html>

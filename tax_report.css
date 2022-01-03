@@ -1,31 +1,33 @@
-.styled-table {
-    border-collapse: collapse;
-    /* margin: 25px 0; */
-    font-size: 0.9em;
-    font-family: sans-serif;
-    min-width: 400px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+table { 
+	width: 750px; 
+	border-collapse: collapse; 
+	margin:50px auto;
 }
 
-.styled-table thead tr {
-    background-color: #009879;
-    color: #ffffff;
-    text-align: left;
+th { 
+	background: #3498db; 
+	color: white; 
+	font-weight: bold; 
+	}
+
+td, th { 
+	padding: 10px; 
+	border: 1px solid #ccc; 
+	text-align: left; 
+	font-size: 18px;
+	}
+
+.labels tr td {
+	background-color: #2cc16a;
+	font-weight: bold;
+	color: #fff;
 }
 
-.styled-table th,
-.styled-table td {
-    padding: 12px 15px;
+.label tr td label {
+	display: block;
 }
 
-.styled-table tbody tr {
-    border-bottom: 1px solid #dddddd;
-}
 
-.styled-table tbody tr:nth-of-type(even) {
-    background-color: #f3f3f3;
-}
-
-.styled-table tbody tr:last-of-type {
-    border-bottom: 2px solid #009879;
+[data-toggle="toggle"] {
+	display: none;
 }
