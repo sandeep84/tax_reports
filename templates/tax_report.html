@@ -4,7 +4,22 @@
         {% for account in account_list %}
         <tr>
             <td>{{ account["name"] }}</td>
-            <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
+            <td width="60px">{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
+            <td>
+                {% if account["splits"]|length > 0 %}
+                <table>
+                    <body>
+                        {% for split in account["splits"] %}
+                        <tr>
+                            <td>{{split["date"]}}</td>
+                            <td>{{split["description"]}}</td>
+                            <td>{{split["value"]}}</td>
+                        </tr>
+                        {% endfor %}
+                    </body>
+                </table>
+                {% endif %}
+            </td>
             {% if account["children"]|length > 0 %}
             <td>
                 {{ account_table(account["children"]) }}
