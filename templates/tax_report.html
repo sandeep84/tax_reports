@@ -1,0 +1,22 @@
+<html>
+
+<head>
+    <title>Test</title>
+</head>
+
+<body>
+    <h2>Income</h2>
+    <table>
+        <tbody>
+            {% for account in summary %}
+            <tr>
+                <td>{{ account["person"] }}</td>
+                <td>{{ account["person"] }}</td>
+                <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
+            </tr>
+        </tbody>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

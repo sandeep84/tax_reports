@@ -1,19 +1,31 @@
 import piecash
 import argparse
 import dateutil
+import pprint
 
-def summarise_account(root_account, prefix=''):
+def summarise_account(root_account, level=0):
+    summary = []
     for account in root_account.children:
-        
-        account_value = 0
+        account_entry = {
+            'name': account.name,
+            'value': 0,
+            'splits': [],
+            'children': [],
+        }
+
         for split in account.splits:
             tr = split.transaction
             if (tr.post_date >= args.fy_start_date) and (tr.post_date <= args.fy_end_date):
-                account_value += split.value
+                account_entry['value'] += split.value
+                account_entry['splits'].append({
+                    'description': split.transaction.description,
+                    'value': split.value,
+                })
 
-        print(prefix + account.name + ': ' + str(-account_value))
+        account_entry['children'] = summarise_account(account, level+1)
+        summary.append(account_entry)
 
-        summarise_account(account, prefix + '    ')
+    return summary
 
 parser = argparse.ArgumentParser(description='Generate tax report')
 parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
@@ -29,4 +41,5 @@ args.fy_end_date = dateutil.parser.parse(args.fy_end_date, dayfirst=True).date()
 book = piecash.open_book(args.book, readonly=True, open_if_lock=True)
 income_account = book.accounts(fullname=args.income_account)
 
-summarise_account(income_account)
+summary = summarise_account(income_account)
+pprint.pprint(summary)
