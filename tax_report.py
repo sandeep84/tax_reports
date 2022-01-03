@@ -25,7 +25,9 @@ def summarise_account(root_account, level=0):
                 })
 
         account_entry['children'] = summarise_account(account, level+1)
-        summary.append(account_entry)
+
+        if account_entry["value"] !=0 or len(account_entry["children"]) > 0:
+            summary.append(account_entry)
 
     return summary
 
