@@ -10,6 +10,7 @@ def summarise_account(root_account, level=0):
         account_entry = {
             'name': account.name,
             'value': 0,
+            'sub_total': 0,
             'splits': [],
             'children': [],
         }
@@ -17,14 +18,15 @@ def summarise_account(root_account, level=0):
         for split in account.splits:
             tr = split.transaction
             if (tr.post_date >= args.fy_start_date) and (tr.post_date <= args.fy_end_date):
-                account_entry['value'] += split.value
+                account_entry['value'] -= split.value
                 account_entry['splits'].append({
                     'date': split.transaction.post_date,
                     'description': split.transaction.description,
-                    'value': split.value,
+                    'value': -split.value,
                 })
 
         account_entry['children'] = summarise_account(account, level+1)
+        account_entry['sub_total'] = account_entry['value'] + sum([s['sub_total'] for s in account_entry['children']])
 
         if account_entry["value"] !=0 or len(account_entry["children"]) > 0:
             summary.append(account_entry)
