@@ -19,6 +19,7 @@ def summarise_account(root_account, level=0):
             if (tr.post_date >= args.fy_start_date) and (tr.post_date <= args.fy_end_date):
                 account_entry['value'] += split.value
                 account_entry['splits'].append({
+                    'date': split.transaction.post_date,
                     'description': split.transaction.description,
                     'value': split.value,
                 })

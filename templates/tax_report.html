@@ -1,22 +1,32 @@
+{% macro account_table(account_list) -%}
+<table class="styled-table">
+    <tbody>
+        {% for account in account_list %}
+        <tr>
+            <td>{{ account["name"] }}</td>
+            <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
+            {% if account["children"]|length > 0 %}
+            <td>
+                {{ account_table(account["children"]) }}
+            </td>
+            {% endif %}
+        </tr>
+    </tbody>
+    {% endfor %}
+</table>
+{%- endmacro %}
+
+
 <html>
 
 <head>
     <title>Test</title>
+    <link rel="stylesheet" href="tax_report.css"/>
 </head>
 
 <body>
     <h2>Income</h2>
-    <table>
-        <tbody>
-            {% for account in summary %}
-            <tr>
-                <td>{{ account["person"] }}</td>
-                <td>{{ account["person"] }}</td>
-                <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
-            </tr>
-        </tbody>
-        {% endfor %}
-    </table>
+    {{ account_table(summary) }}
 </body>
 
 </html>
