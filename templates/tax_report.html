@@ -1,6 +1,6 @@
-{% macro account_table(account_list, level) -%}
+{% macro account_table(account_list, parent_id) -%}
         {% for account in account_list %}
-        <tr data-tt-id="{{ account['name'] }}">
+        <tr data-tt-id="{{ account['name'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
             <td colspan="2">{{ account["name"] }}</td>
             <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
             <td>{% if account["sub_total"] != 0 %}{{ account["sub_total"] }}{% endif %}</td>
@@ -8,7 +8,7 @@
         {% if account["splits"]|length > 0 %}
         {% for split in account["splits"] %}
         <tr data-tt-id="{{ account['name'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['name'] }}">
-            <td width="100px">{{split["date"]}}</td>
+            <td width="140px">{{split["date"]}}</td>
             <td>{{split["description"]}}</td>
             <td>{{split["value"]}}</td>
             <td></td>
@@ -17,7 +17,7 @@
         {% endif %}
 
         {% if account["children"]|length > 0 %}
-            {{ account_table(account["children"], level+1) }}
+            {{ account_table(account["children"], account['name']) }}
         {% endif %}
     {% endfor %}
 {%- endmacro %}
@@ -58,7 +58,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{ account_table(account["children"], 1) }}
+                {{ account_table(account["children"], 0) }}
             </tbody>
         </table>
     {% endfor %}
