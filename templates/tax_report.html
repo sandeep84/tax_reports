@@ -2,7 +2,10 @@
         {% for account in account_list %}
         <tbody class="labels">
         <tr>
-            <td colspan="2">{{ account["name"] }}</td>
+            <td colspan="2">
+                <label for="{{ account["name"] }}">{{ account["name"] }}</label>
+                <input type="checkbox" name="{{ account["name"] }}" id="{{ account["name"] }}" data-toggle="toggle">
+            </td>
             <td>{% if account["value"] != 0 %}{{ account["value"] }}{% endif %}</td>
         </tr>
         </tbody>
@@ -30,6 +33,14 @@
 <head>
     <title>Test</title>
     <link rel="stylesheet" href="tax_report.css"/>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+	        $('[data-toggle="toggle"]').change(function() {
+		        $(this).parents().next('.hide').toggle();
+            });
+        });
+    </script>
 </head>
 
 <body>
