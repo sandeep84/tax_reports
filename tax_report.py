@@ -2,6 +2,7 @@ import piecash
 import argparse
 import dateutil
 import pprint
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 def summarise_account(root_account, level=0):
     summary = []
@@ -43,3 +44,11 @@ income_account = book.accounts(fullname=args.income_account)
 
 summary = summarise_account(income_account)
 pprint.pprint(summary)
+
+env = Environment(
+    loader=PackageLoader("tax_report"),
+    autoescape=select_autoescape()
+)
+template = env.get_template("tax_report.html")
+with open('tax_report_out.html', 'w') as output_file:
+    output_file.write(template.render(summary=summary))
