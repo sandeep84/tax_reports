@@ -12,6 +12,7 @@ parser.add_argument('--exchange_rates_dir', type=str, help='Path with exchange r
 args = parser.parse_args()
 
 book = piecash.open_book(args.book, readonly=False)
+root_currency = book.root_account.commodity
 commodities = [c for c in book.commodities if c.namespace == 'CURRENCY']
 currencies = [c.mnemonic for c in book.commodities if c.namespace == 'CURRENCY']
 
@@ -34,7 +35,7 @@ for file_name in listdir(args.exchange_rates_dir):
                         break
 
                 if not skip:
-                    price = piecash.core.commodity.Price(commodity, commodity, date, row["Currency units per 1 "], source='user:hmrc')
+                    price = piecash.core.commodity.Price(commodity, root_currency, date, row["Currency units per 1 "], source='user:hmrc')
 
 
 book.save()
