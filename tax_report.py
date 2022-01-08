@@ -17,6 +17,9 @@ def insert_account_entry(account_entry, parent_account_entry, summary):
         summary[account_entry['currency']][account_entry['type']].append(account_entry)
 
 def summarise_account(account, parent_account, root_currency, summary):
+    if account.type in ['BANK', 'CASH', 'LIABILITY', 'CREDIT']:
+        return None
+
     account_entry = {
         'guid': account.guid,
         'name': account.name,
@@ -60,7 +63,7 @@ def summarise_account(account, parent_account, root_currency, summary):
 
     for child_account in account.children:
         child_entry = summarise_account(child_account, account_entry, root_currency, summary)
-        if child_account.commodity == account.commodity:
+        if child_entry is not None and child_account.commodity == account.commodity:
             account_entry['sub_total'] += child_entry['sub_total']
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
