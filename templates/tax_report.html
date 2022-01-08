@@ -1,6 +1,6 @@
 {% macro account_table(account_list, parent_id) -%}
         {% for account in account_list %}
-        <tr data-tt-id="{{ account['name'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
+        <tr data-tt-id="{{ account['guid'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
             <td colspan="2">{{ account["name"] }}</td>
             <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
             <td>{% if account["sub_total"] != 0 %}{{ format_currency(account["sub_total"], account["currency"]) }}{% endif %}</td>
@@ -9,8 +9,8 @@
         </tr>
         {% if account["splits"]|length > 0 %}
         {% for split in account["splits"] %}
-        <tr data-tt-id="{{ account['name'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['name'] }}">
-            <td width="140px">{{split["date"]}}</td>
+        <tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
+            <td width="200px">{{split["date"]}}</td>
             <td>{{split["description"]}}</td>
             <td>{{format_currency(split["value"], account["currency"])}}</td>
             <td></td>
@@ -21,7 +21,7 @@
         {% endif %}
 
         {% if account["children"]|length > 0 %}
-            {{ account_table(account["children"], account['name']) }}
+            {{ account_table(account["children"], account['guid']) }}
         {% endif %}
     {% endfor %}
 {%- endmacro %}
@@ -40,20 +40,23 @@
     <link href="https://cdn.jsdelivr.net/npm/jquery-treetable@3.2.0-1/css/jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
     <script>
         $(document).ready(function() {
-            {% for account in summary %}
-            $("#account_info_{{account['name']}}").treetable({
+            {% for currency in summary %}
+                {% for account_type in summary[currency] %}
+                    $("#account_info_{{currency}}_{{account_type}}").treetable({
                 expandable:true
             });
+                {% endfor %}
             {% endfor %}
         });
     </script>
 </head>
 
 <body>
-    <h2>Income</h2>
-    {% for account in summary %}
-        <h3>{{ account["name"] }}</h3>
-        <table class="styled-table" id="account_info_{{account['name']}}">
+    {% for currency in summary %}
+        <h2>{{currency}}</h2>
+        {% for account_type in summary[currency] %}
+        <h3>{{account_type}}</h3>
+        <table class="styled-table" id="account_info_{{currency}}_{{account_type}}">
             <thead>
                 <tr>
                     <th colspan="2">Description</th>
@@ -64,9 +67,10 @@
                 </tr>
             </thead>
             <tbody>
-                {{ account_table(account["children"], 0) }}
+                {{ account_table(summary[currency][account_type], 0) }}
             </tbody>
         </table>
+        {% endfor %}
     {% endfor %}
 </body>
 
