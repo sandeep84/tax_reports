@@ -52,7 +52,8 @@ def summarise_account(account, parent_account, root_currency, summary):
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
                 'value': -split.value,
-                'value_in_root_currency': -split.value / exchange_rate
+                'value_in_root_currency': -split.value / exchange_rate,
+                'exchange_rate': exchange_rate,
             }
             account_entry['value'] += split_entry['value']
             account_entry['value_in_root_currency'] += split_entry['value_in_root_currency']
