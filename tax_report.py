@@ -6,7 +6,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 import babel.numbers
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
-    if parent_account_entry is not None and account_entry['currency'] == parent_account_entry['currency']:
+    if parent_account_entry is not None and account_entry['type'] == parent_account_entry['type'] and account_entry['currency'] == parent_account_entry['currency']:
         parent_account_entry['children'].append(account_entry)
     else:
         if account_entry['currency'] not in summary:
@@ -58,14 +58,14 @@ def summarise_account(account, parent_account, root_currency, summary):
     account_entry['sub_total'] = account_entry['value']
     account_entry['sub_total_in_root_currency'] = account_entry['value_in_root_currency']
 
-    if account_entry['value'] != 0 or len(account.children) > 0:
-        insert_account_entry(account_entry, parent_account, summary)
+    for child_account in account.children:
+        child_entry = summarise_account(child_account, account_entry, root_currency, summary)
+        if child_account.commodity == account.commodity:
+            account_entry['sub_total'] += child_entry['sub_total']
+            account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
-        for child_account in account.children:
-            child_entry = summarise_account(child_account, account_entry, root_currency, summary)
-            if child_account.commodity == account.commodity:
-                account_entry['sub_total'] += child_entry['sub_total']
-                account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
+    if account_entry['sub_total'] != 0 or len(account_entry['children']) > 0:
+        insert_account_entry(account_entry, parent_account, summary)
 
     return account_entry
 
