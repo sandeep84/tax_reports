@@ -1,0 +1,58 @@
+{% macro add_table_rows(account_list, root_currency, parent_id) -%}
+{% for account in account_list %}
+<tr data-tt-id="{{ account['guid'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
+    <td>{{ account["name"] }}</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
+    <td></td>
+    <td></td>
+    <td></td>
+</tr>
+{% if account["splits"]|length > 0 %}
+{% for split in account["splits"] %}
+<tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
+    <td>{{split["description"]}}</td>
+    <td>{{split["quantity"]}}</td>
+    <td>{{split["purchase_date"]}}</td>
+    <td>{{format_currency(split["purchase_value"], account["currency"])}}</td>
+    <td>{{split["sale_date"]}}</td>
+    <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
+    <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
+    <td title="{{account['currency']}}/{{root_currency}} = {{split['purchase_exchange_rate']}}">{{format_currency(split["purchase_value_in_root_currency"], root_currency)}}</td>
+    <td title="{{account['currency']}}/{{root_currency}} = {{split['sale_exchange_rate']}}">{{format_currency(split["sale_value_in_root_currency"], root_currency)}}</td>
+    <td>{{format_currency(split["capital_gains_in_root_currency"], root_currency)}}</td>
+</tr>
+{% endfor %}
+{% endif %}
+
+{% if account["children"]|length > 0 %}
+    {{ add_table_rows(account["children"], root_currency, account['guid']) }}
+{% endif %}
+{% endfor %}
+{%- endmacro %}
+
+{% macro add_table(currency, account_type, account_summary, root_currency) %}
+<table class="styled-table" id="account_info_{{currency}}_{{account_type}}">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Purchase date</th>
+            <th>Purchase value ({{currency}})</th>
+            <th>Sale date</th>
+            <th>Sale value ({{currency}})</th>
+            <th>Capital gains ({{currency}})</th>
+            <th>Purchase value ({{root_currency}})</th>
+            <th>Sale value ({{root_currency}})</th>
+            <th>Capital gains ({{root_currency}})</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ add_table_rows(account_summary, root_currency, 0) }}
+    </tbody>
+</table>
+{% endmacro %}
