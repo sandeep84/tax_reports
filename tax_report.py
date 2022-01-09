@@ -96,6 +96,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
                         # Make a copy of the split for reporting
                         redeemed_split = calculate_redeemed_split(quantity, units[0], split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
+                        account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
                         account_entry['splits'].append(redeemed_split)
 
                     # And modify the original split to remove the redeemed quantity
@@ -109,6 +110,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
                     if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
                         redeemed_split = calculate_redeemed_split(purchase_split_entry['quantity'], purchase_split_entry, split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
+                        account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
                         account_entry['splits'].append(redeemed_split)
 
                     quantity -= purchase_split_entry['quantity']
@@ -135,8 +137,8 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
             split_entry = {
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
-                'value': -split.value,
-                'value_in_root_currency': -split.value / exchange_rate,
+                'value': split.value * account.sign,
+                'value_in_root_currency': split.value / exchange_rate * account.sign,
                 'exchange_rate': exchange_rate,
             }
             account_entry['value'] += split_entry['value']
@@ -176,8 +178,8 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate tax report')
     parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
-    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2020')
-    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2021')
+    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='06/04/2020')
+    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='05/04/2021')
 
     parser.add_argument('--income_account', type=str, help='Income account root (full path)', default='Income:India Income')
 

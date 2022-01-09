@@ -10,7 +10,7 @@
     <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>{% if account["value_in_root_currency"] != 0 %}{{ format_currency(account["value_in_root_currency"], root_currency) }}{% endif %}</td>
 </tr>
 {% if account["splits"]|length > 0 %}
 {% for split in account["splits"] %}
