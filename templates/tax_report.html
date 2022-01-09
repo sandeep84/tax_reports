@@ -15,6 +15,8 @@
             <td></td>
             <td></td>
             <td></td>
+            <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
+            <td></td>
             <td></td>
             <td></td>
             {% endif %}
@@ -35,9 +37,11 @@
             <td>{{split["quantity"]}}</td>
             <td>{{split["purchase_date"]}}</td>
             <td>{{format_currency(split["purchase_value"], account["currency"])}}</td>
-            <td></td>
             <td>{{split["sale_date"]}}</td>
             <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
+            <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
+            <td></td>
+            <td></td>
             <td></td>
             {% endif %}
         </tr>
@@ -104,10 +108,12 @@
                     <th>Quantity</th>
                     <th>Purchase date</th>
                     <th>Purchase value ({{currency}})</th>
-                    <th>Purchase value ({{root_currency}})</th>
                     <th>Sale date</th>
                     <th>Sale value ({{currency}})</th>
+                    <th>Capital gains ({{currency}})</th>
+                    <th>Purchase value ({{root_currency}})</th>
                     <th>Sale value ({{root_currency}})</th>
+                    <th>Capital gains ({{root_currency}})</th>
                 </tr>
             </thead>
             <tbody>

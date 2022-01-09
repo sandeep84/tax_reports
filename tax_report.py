@@ -13,6 +13,20 @@ def get_base_currency(commodity):
 
     return commodity.prices[0].currency.mnemonic
 
+def get_exchange_rate(split, account, root_currency):
+    exchange_rate = None
+
+    if account.commodity == root_currency:
+        exchange_rate = 1
+    else:
+        for price in account.commodity.prices:
+            if price.source == 'user:hmrc' and price.currency == root_currency and split.transaction.post_date.replace(day=1) == price.date:
+                exchange_rate = price.value
+                break
+    
+    assert exchange_rate is not None, f'Unable to find exchange rate ({account.commodity.mnemonic} -> {root_currency}) on date {split.transaction.post_date} for transaction {split.transaction.description}'
+    return exchange_rate
+
 def insert_account_entry(account_entry, parent_account_entry, summary):
     if parent_account_entry is not None and account_entry['type'] == parent_account_entry['type'] and account_entry['currency'] == parent_account_entry['currency']:
         parent_account_entry['children'].append(account_entry)
@@ -87,9 +101,6 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
 
                     quantity -= redeemed_split['quantity']
 
-    if len(account_entry['splits']) > 0:
-        insert_account_entry(account_entry, parent_account_entry, summary)
-
     return account_entry
 
 def process_income_expense_account(account, parent_account_entry, root_currency, summary):
@@ -109,18 +120,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
     for split in account.splits:
         tr = split.transaction
         if (tr.post_date >= args.fy_start_date) and (tr.post_date <= args.fy_end_date):
-
-            # TODO - FIXME
-            exchange_rate = 1
-
-            if account.commodity == root_currency:
-                exchange_rate = 1
-            else:
-                for price in account.commodity.prices:
-                    if price.source == 'user:hmrc' and price.currency == root_currency and split.transaction.post_date.replace(day=1) == price.date:
-                        exchange_rate = price.value
-                        break
-            
+            exchange_rate = get_exchange_rate(split, account, root_currency)
             split_entry = {
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
@@ -153,7 +153,11 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
             account_entry['sub_total'] += child_entry['sub_total']
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
-    if account_entry is not None and (account_entry['sub_total'] != 0 or len(account_entry['children']) > 0):
+    if account_entry is not None \
+        and (account_entry['sub_total'] != 0 \
+            or len(account_entry['children']) > 0
+            or len(account_entry['splits']) > 0
+        ):
         insert_account_entry(account_entry, parent_account_entry, summary)
 
     return account_entry
