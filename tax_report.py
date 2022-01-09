@@ -7,6 +7,12 @@ import babel.numbers
 from collections import deque
 import copy
 
+def get_base_currency(commodity):
+    if commodity.namespace == 'CURRENCY':
+        return commodity.mnemonic
+
+    return commodity.prices[0].currency.mnemonic
+
 def insert_account_entry(account_entry, parent_account_entry, summary):
     if parent_account_entry is not None and account_entry['type'] == parent_account_entry['type'] and account_entry['currency'] == parent_account_entry['currency']:
         parent_account_entry['children'].append(account_entry)
@@ -23,7 +29,7 @@ def summarise_capital_gains(account, parent_account_entry, root_currency, summar
         'guid': account.guid,
         'name': account.name,
         'type': account.type,
-        'currency': 'INR', #account.commodity.base_currency.mnemonic,
+        'currency': get_base_currency(account.commodity),
         'value': 0,
         'value_in_root_currency': 0,
         'sub_total': 0,

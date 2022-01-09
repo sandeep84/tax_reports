@@ -37,7 +37,7 @@
             <td>{{format_currency(split["purchase_value"], account["currency"])}}</td>
             <td></td>
             <td>{{split["sale_date"]}}</td>
-            <td>{{format_currency(split["sale_value"], root_currency)}}</td>
+            <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
             <td></td>
             {% endif %}
         </tr>
