@@ -5,7 +5,6 @@
             <td colspan="2">{{ account["name"] }}</td>
             <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
             <td>{% if account["sub_total"] != 0 %}{{ format_currency(account["sub_total"], account["currency"]) }}{% endif %}</td>
-            <td></td>
             <td>{% if account["value_in_root_currency"] != 0 %}{{ format_currency(account["value_in_root_currency"], root_currency) }}{% endif %}</td>
             <td>{% if account["sub_total_in_root_currency"] != 0 %}{{ format_currency(account["sub_total_in_root_currency"], root_currency) }}{% endif %}</td>
             {% else %}
@@ -29,8 +28,7 @@
             <td>{{split["description"]}}</td>
             <td>{{format_currency(split["value"], account["currency"])}}</td>
             <td></td>
-            <td>{{split["exchange_rate"]}}</td>
-            <td>{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
+            <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
             <td></td>
             {% else %}
             <td>{{split["description"]}}</td>
@@ -40,9 +38,9 @@
             <td>{{split["sale_date"]}}</td>
             <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
             <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td title="{{account['currency']}}/{{root_currency}} = {{split['purchase_exchange_rate']}}">{{format_currency(split["purchase_value_in_root_currency"], root_currency)}}</td>
+            <td title="{{account['currency']}}/{{root_currency}} = {{split['sale_exchange_rate']}}">{{format_currency(split["sale_value_in_root_currency"], root_currency)}}</td>
+            <td>{{format_currency(split["capital_gains_in_root_currency"], root_currency)}}</td>
             {% endif %}
         </tr>
         {% endfor %}
@@ -91,7 +89,6 @@
                     <th colspan="2">Description</th>
                     <th>Value</th>
                     <th>Sub-total</th>
-                    <th>Exchange rate</th>
                     <th>Value ({{root_currency}})</th>
                     <th>Sub-total ({{root_currency}})</th>
                 </tr>
