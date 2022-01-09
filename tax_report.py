@@ -24,7 +24,7 @@ def insert_account_entry(account_entry, parent_account_entry, summary):
         
         summary[account_entry['currency']][account_entry['type']].append(account_entry)
 
-def summarise_capital_gains(account, parent_account_entry, root_currency, summary):
+def process_capital_gains(account, parent_account_entry, root_currency, summary):
     account_entry = {
         'guid': account.guid,
         'name': account.name,
@@ -92,12 +92,7 @@ def summarise_capital_gains(account, parent_account_entry, root_currency, summar
 
     return account_entry
 
-def summarise_account(account, parent_account_entry, root_currency, summary):
-    if account.type in ['BANK', 'CASH', 'LIABILITY', 'CREDIT']:
-        return None
-    elif account.type in ['STOCK', 'MUTUAL']:
-        return summarise_capital_gains(account, parent_account_entry, root_currency, summary)
-
+def process_income_expense_account(account, parent_account_entry, root_currency, summary):
     account_entry = {
         'guid': account.guid,
         'name': account.name,
@@ -140,13 +135,25 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
     account_entry['sub_total'] = account_entry['value']
     account_entry['sub_total_in_root_currency'] = account_entry['value_in_root_currency']
 
+    return account_entry
+
+def summarise_account(account, parent_account_entry, root_currency, summary):
+    if account.type in ['INCOME', 'EXPENSE']:
+        account_entry = process_income_expense_account(account, parent_account_entry, root_currency, summary)
+    elif account.type in ['STOCK', 'MUTUAL']:
+        account_entry = process_capital_gains(account, parent_account_entry, root_currency, summary)
+    elif account.type in ['ROOT', 'ASSET', 'EQUITY', 'BANK', 'CASH', 'LIABILITY', 'CREDIT']:
+        account_entry = None
+    else:
+        assert False, f'Unknown account type {account.type} for account named {account.name}'
+
     for child_account in account.children:
         child_entry = summarise_account(child_account, account_entry, root_currency, summary)
-        if child_entry is not None and child_account.commodity == account.commodity:
+        if account_entry is not None and child_entry is not None and child_account.commodity == account.commodity:
             account_entry['sub_total'] += child_entry['sub_total']
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
-    if account_entry['sub_total'] != 0 or len(account_entry['children']) > 0:
+    if account_entry is not None and (account_entry['sub_total'] != 0 or len(account_entry['children']) > 0):
         insert_account_entry(account_entry, parent_account_entry, summary)
 
     return account_entry
