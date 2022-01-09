@@ -28,7 +28,7 @@ def get_exchange_rate(date_, account_currency, root_currency):
     return exchange_rate
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
-    if parent_account_entry is not None and account_entry['type'] == parent_account_entry['type'] and account_entry['currency'] == parent_account_entry['currency']:
+    if parent_account_entry is not None and account_entry['currency'] == parent_account_entry['currency']:
         parent_account_entry['children'].append(account_entry)
     else:
         if account_entry['currency'] not in summary:
@@ -137,10 +137,16 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
             split_entry = {
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
+                'category': '',
                 'value': split.value * account.sign,
                 'value_in_root_currency': split.value / exchange_rate * account.sign,
                 'exchange_rate': exchange_rate,
             }
+            for other_split in split.transaction.splits:
+                if other_split != split:
+                    split_entry['category'] += other_split.account.name + ';'
+            split_entry['category'] = split_entry['category'][:-1]
+
             account_entry['value'] += split_entry['value']
             account_entry['value_in_root_currency'] += split_entry['value_in_root_currency']
             account_entry['splits'].append(split_entry)
@@ -162,7 +168,7 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
 
     for child_account in account.children:
         child_entry = summarise_account(child_account, account_entry, root_currency, summary)
-        if account_entry is not None and child_entry is not None and child_account.commodity == account.commodity:
+        if account_entry is not None and child_entry is not None and account_entry['currency'] == child_entry['currency']:
             account_entry['sub_total'] += child_entry['sub_total']
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 

@@ -1,7 +1,7 @@
 {% macro add_table_rows(account_list, root_currency, parent_id) -%}
         {% for account in account_list %}
         <tr data-tt-id="{{ account['guid'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
-            <td colspan="2">{{ account["name"] }}</td>
+            <td colspan="3">{{ account["name"] }}</td>
             <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
             <td>{% if account["sub_total"] != 0 %}{{ format_currency(account["sub_total"], account["currency"]) }}{% endif %}</td>
             <td>{% if account["value_in_root_currency"] != 0 %}{{ format_currency(account["value_in_root_currency"], root_currency) }}{% endif %}</td>
@@ -12,6 +12,7 @@
         <tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
             <td width="200px">{{split["date"]}}</td>
             <td>{{split["description"]}}</td>
+            <td>{{split["category"]}}</td>
             <td>{{format_currency(split["value"], account["currency"])}}</td>
             <td></td>
             <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
@@ -30,7 +31,7 @@
 <table class="styled-table" id="account_info_{{currency}}_{{account_type}}">
     <thead>
         <tr>
-            <th colspan="2">Description</th>
+            <th colspan="3">Description</th>
             <th>Value</th>
             <th>Sub-total</th>
             <th>Value ({{root_currency}})</th>
