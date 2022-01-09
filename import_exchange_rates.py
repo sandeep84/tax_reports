@@ -20,12 +20,14 @@ for file_name in listdir(args.exchange_rates_dir):
     print(f'Parsing file {file_name}')
     with open(os.path.join(args.exchange_rates_dir, file_name), 'r') as csvfile:
         reader = csv.DictReader(csvfile)
+        inserted = {}
 
         for row in reader:
-            if row['Currency Code'] in currencies:
+            if row['Currency Code'] in currencies and not row['Currency Code'] in inserted:
                 print(f'{row["Start Date"]}: Adding price for {row["Currency Code"]}: {row["Currency units per 1 "]}')
                 commodity = book.commodities(mnemonic=row["Currency Code"])
                 date = dateutil.parser.parse(row["Start Date"], dayfirst=True).date()
+                inserted[row['Currency Code']] = True
                 
                 skip = False
                 for pr in commodity.prices:

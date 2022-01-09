@@ -9,22 +9,22 @@ import copy
 
 def get_base_currency(commodity):
     if commodity.namespace == 'CURRENCY':
-        return commodity.mnemonic
+        return commodity
 
-    return commodity.prices[0].currency.mnemonic
+    return commodity.prices[0].currency
 
-def get_exchange_rate(split, account, root_currency):
+def get_exchange_rate(split, account_currency, root_currency):
     exchange_rate = None
 
-    if account.commodity == root_currency:
+    if account_currency == root_currency:
         exchange_rate = 1
     else:
-        for price in account.commodity.prices:
+        for price in account_currency.prices:
             if price.source == 'user:hmrc' and price.currency == root_currency and split.transaction.post_date.replace(day=1) == price.date:
                 exchange_rate = price.value
                 break
     
-    assert exchange_rate is not None, f'Unable to find exchange rate ({account.commodity.mnemonic} -> {root_currency}) on date {split.transaction.post_date} for transaction {split.transaction.description}'
+    assert exchange_rate is not None, f'Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {split.transaction.post_date} for transaction {split.transaction.description}'
     return exchange_rate
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
@@ -38,16 +38,23 @@ def insert_account_entry(account_entry, parent_account_entry, summary):
         
         summary[account_entry['currency']][account_entry['type']].append(account_entry)
 
-def calculate_redeemed_split(quantity, purchase_split_entry, sale_split):
+def calculate_redeemed_split(quantity, purchase_split_entry, sale_split, root_currency):
     redeemed_split = copy.deepcopy(purchase_split_entry)
     redeemed_split['description'] = sale_split.transaction.description
     redeemed_split['sale_date'] = sale_split.transaction.post_date
     redeemed_split['sale_rate'] = sale_split.value / sale_split.quantity
 
+    exchange_rate = get_exchange_rate(sale_split, get_base_currency(sale_split.account.commodity), root_currency)
+    redeemed_split['sale_rate_in_root_currency'] = sale_split.value / sale_split.quantity / exchange_rate
+
     redeemed_split['quantity'] = quantity
     redeemed_split['sale_value'] = quantity * redeemed_split['sale_rate']
     redeemed_split['purchase_value'] = quantity * redeemed_split['purchase_rate']
     redeemed_split['capital_gains'] = redeemed_split['sale_value'] - redeemed_split['purchase_value']
+
+    redeemed_split['sale_value_in_root_currency'] = quantity * redeemed_split['sale_rate_in_root_currency']
+    redeemed_split['purchase_value_in_root_currency'] = quantity * redeemed_split['purchase_rate_in_root_currency']
+    redeemed_split['capital_gains_in_root_currency'] = redeemed_split['sale_value_in_root_currency'] - redeemed_split['purchase_value_in_root_currency']
 
     return redeemed_split
 
@@ -56,7 +63,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
         'guid': account.guid,
         'name': account.name,
         'type': account.type,
-        'currency': get_base_currency(account.commodity),
+        'currency': get_base_currency(account.commodity).mnemonic,
         'value': 0,
         'value_in_root_currency': 0,
         'sub_total': 0,
@@ -70,10 +77,11 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
     for split in account.splits:
         #print(f'{split.transaction.post_date}, {split.transaction.description}, {split.quantity}, {split.value}')
         if split.quantity >= 0: # A purchase or a dividend reinvestment
+            exchange_rate = get_exchange_rate(split, get_base_currency(account.commodity), root_currency)
             units.append({
                 'purchase_date': split.transaction.post_date,
-                'purchase_value': split.value,
                 'purchase_rate': split.value / split.quantity,
+                'purchase_rate_in_root_currency': split.value / split.quantity / exchange_rate,
                 'quantity': split.quantity,
             })
         else:
@@ -85,13 +93,12 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
             
                     if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
                         # Make a copy of the split for reporting
-                        redeemed_split = calculate_redeemed_split(quantity, units[0], split)
+                        redeemed_split = calculate_redeemed_split(quantity, units[0], split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
                         account_entry['splits'].append(redeemed_split)
 
                     # And modify the original split to remove the redeemed quantity
                     units[0]['quantity'] -= quantity
-                    units[0]['purchase_value'] = units[0]['quantity'] * units[0]['purchase_rate']
 
                     quantity = 0
                 else:
@@ -99,7 +106,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
                     # Just pop the original split for reporting
                     purchase_split_entry = units.popleft()
                     if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
-                        redeemed_split = calculate_redeemed_split(purchase_split_entry['quantity'], purchase_split_entry, split)
+                        redeemed_split = calculate_redeemed_split(purchase_split_entry['quantity'], purchase_split_entry, split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
                         account_entry['splits'].append(redeemed_split)
 
@@ -123,7 +130,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
 
     for split in account.splits:
         if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
-            exchange_rate = get_exchange_rate(split, account, root_currency)
+            exchange_rate = get_exchange_rate(split, account.commodity, root_currency)
             split_entry = {
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
