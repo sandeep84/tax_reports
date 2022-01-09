@@ -38,6 +38,19 @@ def insert_account_entry(account_entry, parent_account_entry, summary):
         
         summary[account_entry['currency']][account_entry['type']].append(account_entry)
 
+def calculate_redeemed_split(quantity, purchase_split_entry, sale_split):
+    redeemed_split = copy.deepcopy(purchase_split_entry)
+    redeemed_split['description'] = sale_split.transaction.description
+    redeemed_split['sale_date'] = sale_split.transaction.post_date
+    redeemed_split['sale_rate'] = sale_split.value / sale_split.quantity
+
+    redeemed_split['quantity'] = quantity
+    redeemed_split['sale_value'] = quantity * redeemed_split['sale_rate']
+    redeemed_split['purchase_value'] = quantity * redeemed_split['purchase_rate']
+    redeemed_split['capital_gains'] = redeemed_split['sale_value'] - redeemed_split['purchase_value']
+
+    return redeemed_split
+
 def process_capital_gains(account, parent_account_entry, root_currency, summary):
     account_entry = {
         'guid': account.guid,
@@ -55,11 +68,10 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
     units = deque()
 
     for split in account.splits:
-        tr = split.transaction
-        #print(f'{tr.post_date}, {tr.description}, {split.quantity}, {split.value}')
+        #print(f'{split.transaction.post_date}, {split.transaction.description}, {split.quantity}, {split.value}')
         if split.quantity >= 0: # A purchase or a dividend reinvestment
             units.append({
-                'purchase_date': tr.post_date,
+                'purchase_date': split.transaction.post_date,
                 'purchase_value': split.value,
                 'purchase_rate': split.value / split.quantity,
                 'quantity': split.quantity,
@@ -70,36 +82,28 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
             while quantity > 0:
                 if units[0]['quantity'] > quantity:
                     # The redemption is a part of the oldest purchase
-                    # Make a copy of the split for reporting
-                    redeemed_split = copy.deepcopy(units[0])
-                    redeemed_split['quantity'] = quantity
-                    redeemed_split['description'] = split.transaction.description
-                    redeemed_split['sale_date'] = split.transaction.post_date
-                    redeemed_split['sale_rate'] = split.value / split.quantity
-                    redeemed_split['sale_value'] = quantity * redeemed_split['sale_rate']
-                    redeemed_split['purchase_value'] = quantity * redeemed_split['purchase_rate']
-                    redeemed_split['capital_gains'] = redeemed_split['sale_value'] - redeemed_split['purchase_value']
-                    account_entry['value'] += redeemed_split['capital_gains']
-                    account_entry['splits'].append(redeemed_split)
+            
+                    if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
+                        # Make a copy of the split for reporting
+                        redeemed_split = calculate_redeemed_split(quantity, units[0], split)
+                        account_entry['value'] += redeemed_split['capital_gains']
+                        account_entry['splits'].append(redeemed_split)
 
                     # And modify the original split to remove the redeemed quantity
                     units[0]['quantity'] -= quantity
-                    units[0]['purchase_value'] = units[0]['quantity'] * redeemed_split['purchase_rate']
+                    units[0]['purchase_value'] = units[0]['quantity'] * units[0]['purchase_rate']
 
                     quantity = 0
                 else:
                     # The oldest purchase only covers part of the quantity sold
                     # Just pop the original split for reporting
-                    redeemed_split = units.popleft()
-                    redeemed_split['description'] = split.transaction.description
-                    redeemed_split['sale_date'] = split.transaction.post_date
-                    redeemed_split['sale_rate'] = split.value / split.quantity
-                    redeemed_split['sale_value'] = redeemed_split['quantity'] * redeemed_split['sale_rate']
-                    redeemed_split['capital_gains'] = redeemed_split['sale_value'] - redeemed_split['purchase_value']
-                    account_entry['value'] += redeemed_split['capital_gains']
-                    account_entry['splits'].append(redeemed_split)
+                    purchase_split_entry = units.popleft()
+                    if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
+                        redeemed_split = calculate_redeemed_split(purchase_split_entry['quantity'], purchase_split_entry, split)
+                        account_entry['value'] += redeemed_split['capital_gains']
+                        account_entry['splits'].append(redeemed_split)
 
-                    quantity -= redeemed_split['quantity']
+                    quantity -= purchase_split_entry['quantity']
 
     return account_entry
 
@@ -118,8 +122,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
     }
 
     for split in account.splits:
-        tr = split.transaction
-        if (tr.post_date >= args.fy_start_date) and (tr.post_date <= args.fy_end_date):
+        if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
             exchange_rate = get_exchange_rate(split, account, root_currency)
             split_entry = {
                 'date': split.transaction.post_date,
@@ -140,9 +143,9 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
 def summarise_account(account, parent_account_entry, root_currency, summary):
     if account.type in ['INCOME', 'EXPENSE']:
         account_entry = process_income_expense_account(account, parent_account_entry, root_currency, summary)
-    elif account.type in ['STOCK', 'MUTUAL']:
+    elif account.type in ['ASSET', 'EQUITY', 'STOCK', 'MUTUAL']:
         account_entry = process_capital_gains(account, parent_account_entry, root_currency, summary)
-    elif account.type in ['ROOT', 'ASSET', 'EQUITY', 'BANK', 'CASH', 'LIABILITY', 'CREDIT']:
+    elif account.type in ['ROOT', 'BANK', 'CASH', 'LIABILITY', 'CREDIT']:
         account_entry = None
     else:
         assert False, f'Unknown account type {account.type} for account named {account.name}'
