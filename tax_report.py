@@ -82,7 +82,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
         if split.quantity >= 0: # A purchase or a dividend reinvestment
             units.append({
                 'purchase_date': split.transaction.post_date,
-                'purchase_rate': split.value / split.quantity,
+                'purchase_rate': split.value / split.quantity if split.quantity != 0 else 0,
                 'quantity': split.quantity,
             })
         else:
@@ -127,7 +127,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
         'value_in_root_currency': 0,
         'sub_total': 0,
         'sub_total_in_root_currency': 0,
-        'splits': [],
+        'splits': {},
         'children': [],
     }
 
@@ -137,19 +137,28 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
             split_entry = {
                 'date': split.transaction.post_date,
                 'description': split.transaction.description,
-                'category': '',
                 'value': split.value * account.sign,
                 'value_in_root_currency': split.value / exchange_rate * account.sign,
                 'exchange_rate': exchange_rate,
             }
+            category = ''
             for other_split in split.transaction.splits:
                 if other_split != split:
-                    split_entry['category'] += other_split.account.name + ';'
-            split_entry['category'] = split_entry['category'][:-1]
+                    category += other_split.account.fullname + ';'
+            category = category[:-1]
 
             account_entry['value'] += split_entry['value']
             account_entry['value_in_root_currency'] += split_entry['value_in_root_currency']
-            account_entry['splits'].append(split_entry)
+
+            if category not in account_entry['splits']:
+                account_entry['splits'][category] = {
+                    'sub_total': 0,
+                    'sub_total_in_root_currency': 0,
+                    'splits': [],
+                }
+            account_entry['splits'][category]['splits'].append(split_entry)
+            account_entry['splits'][category]['sub_total'] += split_entry['value']
+            account_entry['splits'][category]['sub_total_in_root_currency'] += split_entry['value_in_root_currency']
     
     account_entry['sub_total'] = account_entry['value']
     account_entry['sub_total_in_root_currency'] = account_entry['value_in_root_currency']
@@ -184,8 +193,8 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate tax report')
     parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
-    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='06/04/2020')
-    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='05/04/2021')
+    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='01/04/2021')
+    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='31/03/2022')
 
     parser.add_argument('--income_account', type=str, help='Income account root (full path)', default='Income:India Income')
 

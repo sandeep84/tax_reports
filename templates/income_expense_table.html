@@ -8,16 +8,25 @@
             <td>{% if account["sub_total_in_root_currency"] != 0 %}{{ format_currency(account["sub_total_in_root_currency"], root_currency) }}{% endif %}</td>
         </tr>
         {% if account["splits"]|length > 0 %}
-        {% for split in account["splits"] %}
-        <tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
-            <td width="200px">{{split["date"]}}</td>
-            <td>{{split["description"]}}</td>
-            <td>{{split["category"]}}</td>
-            <td>{{format_currency(split["value"], account["currency"])}}</td>
+        {% for category in account["splits"] %}
+        <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}" data-tt-parent-id="{{ account['guid'] }}">
+            <td colspan="3">&lt-&gt {{category}}</td>
             <td></td>
-            <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
+            <td>{{ format_currency(account["splits"][category]["sub_total"], account["currency"]) }}</td>
             <td></td>
+            <td>{{ format_currency(account["splits"][category]["sub_total_in_root_currency"], root_currency) }}</td>
         </tr>
+            {% for split in account["splits"][category]["splits"] %}
+            <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}_{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}_split_{{ category }}">
+                <td width="200px">{{split["date"]}}</td>
+                <td>{{split["description"]}}</td>
+                <td></td>
+                <td>{{format_currency(split["value"], account["currency"])}}</td>
+                <td></td>
+                <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
+                <td></td>
+            </tr>
+            {% endfor %}
         {% endfor %}
         {% endif %}
 
