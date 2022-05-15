@@ -24,7 +24,7 @@ def get_exchange_rate(date_, account_currency, root_currency):
                 exchange_rate = price.value
                 break
     
-    assert exchange_rate is not None, f'Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {split.transaction.post_date} for transaction {split.transaction.description}'
+    assert exchange_rate is not None, f'Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {date_.replace(day=1)}'
     return exchange_rate
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
