@@ -165,7 +165,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
 
     return account_entry
 
-def summarise_account(account, parent_account_entry, root_currency, summary):
+def summarise_account(account, parent_account_entry, root_currency, summary, currency_filter):
     if account.type in ['INCOME', 'EXPENSE']:
         account_entry = process_income_expense_account(account, parent_account_entry, root_currency, summary)
     elif account.type in ['ASSET', 'EQUITY', 'STOCK', 'MUTUAL']:
@@ -176,12 +176,13 @@ def summarise_account(account, parent_account_entry, root_currency, summary):
         assert False, f'Unknown account type {account.type} for account named {account.name}'
 
     for child_account in account.children:
-        child_entry = summarise_account(child_account, account_entry, root_currency, summary)
+        child_entry = summarise_account(child_account, account_entry, root_currency, summary, currency_filter)
         if account_entry is not None and child_entry is not None and account_entry['currency'] == child_entry['currency']:
             account_entry['sub_total'] += child_entry['sub_total']
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
     if account_entry is not None \
+        and (currency_filter==None or account_entry['currency'] == currency_filter) \
         and (account_entry['sub_total'] != 0 \
             or len(account_entry['children']) > 0
             or len(account_entry['splits']) > 0
@@ -197,6 +198,7 @@ if __name__ == '__main__':
     parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='31/03/2022')
 
     parser.add_argument('--income_account', type=str, help='Income account root (full path)', default='Income:India Income')
+    parser.add_argument('--currency', type=str, help='Restrict report to specified currency', default=None)
 
     args = parser.parse_args()
     args.fy_start_date = dateutil.parser.parse(args.fy_start_date, dayfirst=True).date()
@@ -207,7 +209,7 @@ if __name__ == '__main__':
     income_account = book.accounts(fullname=args.income_account)
 
     summary = {}
-    summarise_account(book.root_account, None, book.default_currency, summary)
+    summarise_account(book.root_account, None, book.default_currency, summary, args.currency)
     #pprint.pprint(summary)
 
     env = Environment(
