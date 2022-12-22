@@ -6,6 +6,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 import babel.numbers
 from collections import deque
 import copy
+import io
 
 def get_base_currency(commodity):
     if commodity.namespace == 'CURRENCY':
@@ -21,7 +22,7 @@ def get_exchange_rate(date_, account_currency, root_currency):
     else:
         for price in account_currency.prices:
             if price.source == 'user:hmrc' and price.currency == root_currency and date_.replace(day=1) == price.date:
-                exchange_rate = price.value
+                exchange_rate = 1/price.value
                 break
     
     assert exchange_rate is not None, f'Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {date_.replace(day=1)}'
@@ -194,8 +195,8 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate tax report')
     parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
-    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='01/04/2021')
-    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='31/03/2022')
+    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2021')
+    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2022')
 
     parser.add_argument('--income_account', type=str, help='Income account root (full path)', default='Income:India Income')
     parser.add_argument('--currency', type=str, help='Restrict report to specified currency', default=None)
@@ -219,5 +220,5 @@ if __name__ == '__main__':
     template = env.get_template("tax_report.html")
     template.globals['format_currency'] = babel.numbers.format_currency
 
-    with open('tax_report_out.html', 'w') as output_file:
+    with io.open('tax_report_out.html', "w", encoding="utf-8") as output_file:
         output_file.write(template.render(summary=summary, root_currency=root_currency.mnemonic))
