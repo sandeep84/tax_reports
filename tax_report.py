@@ -78,7 +78,8 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
 
     units = deque()
 
-    for split in account.splits:
+    splits = sorted(account.splits, key=lambda x: x.transaction.post_date)
+    for split in splits:
         #print(f'{split.transaction.post_date}, {split.transaction.description}, {split.quantity}, {split.value}')
         if split.quantity >= 0: # A purchase or a dividend reinvestment
             units.append({
@@ -132,7 +133,8 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
         'children': [],
     }
 
-    for split in account.splits:
+    splits = sorted(account.splits, key=lambda x: x.transaction.post_date)
+    for split in splits:
         if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
             exchange_rate = get_exchange_rate(split.transaction.post_date, account.commodity, root_currency)
             split_entry = {
