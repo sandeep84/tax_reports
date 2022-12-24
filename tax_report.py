@@ -8,6 +8,15 @@ from collections import deque
 import copy
 import io
 
+def getSourceAccount(split):
+    sourceAccounts = []
+    for other_split in split.transaction.splits:
+        if other_split != split:
+            if (split.account.type in piecash.core.account.incexp_types and other_split.account.type in piecash.core.account.assetliab_types):
+                sourceAccounts.append(other_split.account)
+
+    return sourceAccounts[0].fullname
+
 def get_base_currency(commodity):
     if commodity.namespace == 'CURRENCY':
         return commodity
@@ -135,7 +144,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
 
     splits = sorted(account.splits, key=lambda x: x.transaction.post_date)
     for split in splits:
-        if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
+        if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date) and split.value != 0:
             exchange_rate = get_exchange_rate(split.transaction.post_date, account.commodity, root_currency)
             split_entry = {
                 'date': split.transaction.post_date,
@@ -144,12 +153,8 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
                 'value_in_root_currency': split.value / exchange_rate * account.sign,
                 'exchange_rate': exchange_rate,
             }
-            category = ''
-            for other_split in split.transaction.splits:
-                if other_split != split:
-                    category += other_split.account.fullname + ';'
-            category = category[:-1]
 
+            category = getSourceAccount(split)
             account_entry['value'] += split_entry['value']
             account_entry['value_in_root_currency'] += split_entry['value_in_root_currency']
 
