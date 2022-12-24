@@ -21,7 +21,7 @@ currencies = [c.mnemonic for c in book.commodities if c.namespace == 'CURRENCY']
 
 def getValue(dict_value, regex):
     for header in dict_value:
-        if re.match(regex, header):
+        if re.match(regex, header, re.IGNORECASE):
             return dict_value[header]
     
     return None
@@ -36,10 +36,11 @@ for file_name in listdir(args.exchange_rates_dir):
             currency_code = getValue(row, r'Currency\s*Code')
             if currency_code in currencies and not currency_code in inserted:
                 exchange_rate = str(1 / float(getValue(row, r'Currency units per.*1')))
+                start_date = getValue(row, r'Start Date')
 
-                print(f'{row["Start Date"]}: Adding price for {currency_code}: {exchange_rate}')
+                print(f'{start_date}: Adding price for {currency_code}: {exchange_rate}')
                 commodity = book.commodities(mnemonic=currency_code)
-                date = dateutil.parser.parse(row["Start Date"], dayfirst=True).date()
+                date = dateutil.parser.parse(start_date, dayfirst=True).date()
                 inserted[currency_code] = True
                 
                 skip = float(exchange_rate) <= 1e-4
@@ -51,10 +52,12 @@ for file_name in listdir(args.exchange_rates_dir):
 
                 if not skip:
                     price = piecash.core.commodity.Price(commodity, root_currency, date, exchange_rate, source='user:hmrc')
+                else:
+                    print(f'WARNING: Skipping import for price entry for {currency_code} on {date} - {exchange_rate}')
 
 book.save()
 
 for c in commodities:
     print(f'{c.mnemonic}:\n~~~~~~~~~~~~')
-    for p in c.prices:
+    for p in sorted(c.prices, key=lambda x: x.date):
         print(f' - {p.date}: {p.value}, {p.source}')
