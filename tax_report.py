@@ -205,7 +205,6 @@ if __name__ == '__main__':
     parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2021')
     parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2022')
 
-    parser.add_argument('--income_account', type=str, help='Income account root (full path)', default='Income')
     parser.add_argument('--currency', type=str, help='Restrict report to specified currency', default=None)
 
     args = parser.parse_args()
@@ -214,7 +213,6 @@ if __name__ == '__main__':
 
     book = piecash.open_book(args.book, readonly=True, open_if_lock=True)
     root_currency = book.root_account.commodity
-    income_account = book.accounts(fullname=args.income_account)
 
     summary = {}
     summarise_account(book.root_account, None, book.default_currency, summary, args.currency)
