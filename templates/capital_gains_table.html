@@ -35,17 +35,17 @@
 {% endfor %}
 {%- endmacro %}
 
-{% macro add_table(currency, account_type, account_summary, root_currency) %}
-<table class="styled-table" id="account_info_{{currency}}_{{account_type}}">
+{% macro add_table(account_type, account_summary, root_currency) %}
+<table class="styled-table" id="account_info_{{account_type}}">
     <thead>
         <tr>
             <th>Description</th>
             <th>Quantity</th>
             <th>Purchase date</th>
-            <th>Purchase value ({{currency}})</th>
+            <th>Purchase value</th>
             <th>Sale date</th>
-            <th>Sale value ({{currency}})</th>
-            <th>Capital gains ({{currency}})</th>
+            <th>Sale value</th>
+            <th>Capital gains</th>
             <th>Purchase value ({{root_currency}})</th>
             <th>Sale value ({{root_currency}})</th>
             <th>Capital gains ({{root_currency}})</th>

@@ -13,28 +13,23 @@
     <link href="https://cdn.jsdelivr.net/npm/jquery-treetable@3.2.0-1/css/jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
     <script>
         $(document).ready(function() {
-            {% for currency in summary %}
-                {% for account_type in summary[currency] %}
-                    $("#account_info_{{currency}}_{{account_type}}").treetable({
+        {% for account_type in summary %}
+            $("#account_info_{{account_type}}").treetable({
                 expandable:true
             });
-                {% endfor %}
-            {% endfor %}
+        {% endfor %}
         });
     </script>
 </head>
 
 <body>
-    {% for currency in summary %}
-        <h2>{{currency}}</h2>
-        {% for account_type in summary[currency] %}
+    {% for account_type in summary %}
         <h3>{{account_type}}</h3>
         {% if account_type not in ('ASSET', 'EQUITY', 'STOCK', 'MUTUAL') %}
-            {{ income_expense_table.add_table(currency, account_type, summary[currency][account_type], root_currency) }}
+            {{ income_expense_table.add_table(account_type, summary[account_type], root_currency) }}
         {% else %}
-            {{ capital_gains_table.add_table(currency, account_type, summary[currency][account_type], root_currency) }}
+            {{ capital_gains_table.add_table(account_type, summary[account_type], root_currency) }}
         {% endif %}
-        {% endfor %}
     {% endfor %}
 </body>
 

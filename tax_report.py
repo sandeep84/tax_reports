@@ -38,15 +38,13 @@ def get_exchange_rate(date_, account_currency, root_currency):
     return exchange_rate
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
-    if parent_account_entry is not None and account_entry['currency'] == parent_account_entry['currency']:
+    if parent_account_entry is not None:
         parent_account_entry['children'].append(account_entry)
     else:
-        if account_entry['currency'] not in summary:
-            summary[account_entry['currency']] = {}
-        if account_entry['type'] not in summary[account_entry['currency']]:
-            summary[account_entry['currency']][account_entry['type']] = []
+        if account_entry['type'] not in summary:
+            summary[account_entry['type']] = []
         
-        summary[account_entry['currency']][account_entry['type']].append(account_entry)
+        summary[account_entry['type']].append(account_entry)
 
 def calculate_redeemed_split(quantity, purchase_split_entry, sale_split, root_currency):
     redeemed_split = copy.deepcopy(purchase_split_entry)
@@ -183,10 +181,17 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
     else:
         assert False, f'Unknown account type {account.type} for account named {account.name}'
 
+    force_subtotal_to_zero = False
     for child_account in account.children:
         child_entry = summarise_account(child_account, account_entry, root_currency, summary, currency_filter)
-        if account_entry is not None and child_entry is not None and account_entry['currency'] == child_entry['currency']:
-            account_entry['sub_total'] += child_entry['sub_total']
+        if account_entry is not None and child_entry is not None:
+            if account_entry['currency'] != child_entry['currency']:
+                force_subtotal_to_zero = True
+                account_entry['sub_total'] = 0
+            
+            if force_subtotal_to_zero == False:
+                account_entry['sub_total'] += child_entry['sub_total']
+                
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
     if account_entry is not None \
