@@ -27,6 +27,9 @@ def getValue(dict_value, regex):
     return None
 
 for file_name in listdir(args.exchange_rates_dir):
+    if not file_name.endswith('.csv'):
+        continue
+    
     print(f'Parsing file {file_name}')
     with open(os.path.join(args.exchange_rates_dir, file_name), 'r') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -35,7 +38,7 @@ for file_name in listdir(args.exchange_rates_dir):
         for row in reader:
             currency_code = getValue(row, r'Currency\s*Code')
             if currency_code in currencies and not currency_code in inserted:
-                exchange_rate = str(1 / float(getValue(row, r'Currency units per.*1')))
+                exchange_rate = str(1 / float(getValue(row, r'Curre[nc]+y units per.*1')))
                 start_date = getValue(row, r'Start Date')
 
                 print(f'{start_date}: Adding price for {currency_code}: {exchange_rate}')
