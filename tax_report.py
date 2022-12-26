@@ -8,7 +8,7 @@ from collections import deque
 import copy
 import io
 
-def getSourceAccount(split):
+def get_source_account(split):
     sourceAccounts = []
     for other_split in split.transaction.splits:
         if other_split != split:
@@ -30,7 +30,7 @@ def get_exchange_rate(date_, account_currency, root_currency):
         exchange_rate = 1
     else:
         for price in account_currency.prices:
-            if price.source == 'user:hmrc' and price.currency == root_currency and date_.replace(day=1) == price.date:
+            if price.source in ['user:hmrc', 'user:xe'] and price.currency == root_currency and date_.replace(day=1) == price.date:
                 exchange_rate = 1/price.value
                 break
     
@@ -152,7 +152,7 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
                 'exchange_rate': exchange_rate,
             }
 
-            category = getSourceAccount(split)
+            category = get_source_account(split)
             account_entry['value'] += split_entry['value']
             account_entry['value_in_root_currency'] += split_entry['value_in_root_currency']
 
