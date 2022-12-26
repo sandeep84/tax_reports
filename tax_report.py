@@ -1,7 +1,6 @@
 import piecash
 import argparse
 import dateutil
-import pprint
 from jinja2 import Environment, PackageLoader, select_autoescape
 import babel.numbers
 from collections import deque
@@ -15,6 +14,12 @@ def get_source_account(split):
             if (split.account.type in piecash.core.account.incexp_types and other_split.account.type in piecash.core.account.assetliab_types):
                 sourceAccounts.append(other_split.account)
 
+    # Preferably return mutual-fund or stock accounts as the source account
+    for account in sourceAccounts:
+        if account.type in ['MUTUAL', 'STOCK']:
+            return account.fullname
+
+    # Otherwise, just return the first account in the list
     return sourceAccounts[0].fullname
 
 def get_base_currency(commodity):
