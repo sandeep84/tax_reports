@@ -6,6 +6,7 @@ import babel.numbers
 from collections import deque
 import copy
 import io
+from decimal import Decimal
 
 def get_source_account(split):
     sourceAccounts = []
@@ -39,7 +40,8 @@ def get_exchange_rate(date_, account_currency, root_currency):
                 exchange_rate = 1/price.value
                 break
     
-    assert exchange_rate is not None, f'Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {date_.replace(day=1)}'
+    if exchange_rate is None:
+        print(f'WARNING: Unable to find exchange rate ({account_currency.mnemonic} -> {root_currency}) on date {date_.replace(day=1)}')
     return exchange_rate
 
 def insert_account_entry(account_entry, parent_account_entry, summary):
@@ -58,10 +60,12 @@ def calculate_redeemed_split(quantity, purchase_split_entry, sale_split, root_cu
     redeemed_split['sale_rate'] = sale_split.value / sale_split.quantity
 
     redeemed_split['purchase_exchange_rate'] = get_exchange_rate(purchase_split_entry['purchase_date'], get_base_currency(sale_split.account.commodity), root_currency)
-    redeemed_split['purchase_rate_in_root_currency'] = redeemed_split['purchase_rate'] / redeemed_split['purchase_exchange_rate']
+    if redeemed_split['purchase_exchange_rate'] is not None:
+        redeemed_split['purchase_rate_in_root_currency'] = redeemed_split['purchase_rate'] / redeemed_split['purchase_exchange_rate']
 
     redeemed_split['sale_exchange_rate'] = get_exchange_rate(sale_split.transaction.post_date, get_base_currency(sale_split.account.commodity), root_currency)
-    redeemed_split['sale_rate_in_root_currency'] = redeemed_split['sale_rate'] / redeemed_split['sale_exchange_rate']
+    if redeemed_split['sale_exchange_rate'] is not None:
+        redeemed_split['sale_rate_in_root_currency'] = redeemed_split['sale_rate'] / redeemed_split['sale_exchange_rate']
 
     redeemed_split['quantity'] = quantity
     redeemed_split['sale_value'] = quantity * redeemed_split['sale_rate']
@@ -69,8 +73,10 @@ def calculate_redeemed_split(quantity, purchase_split_entry, sale_split, root_cu
     redeemed_split['capital_gains'] = redeemed_split['sale_value'] - redeemed_split['purchase_value']
 
     redeemed_split['sale_value_in_root_currency'] = quantity * redeemed_split['sale_rate_in_root_currency']
-    redeemed_split['purchase_value_in_root_currency'] = quantity * redeemed_split['purchase_rate_in_root_currency']
-    redeemed_split['capital_gains_in_root_currency'] = redeemed_split['sale_value_in_root_currency'] - redeemed_split['purchase_value_in_root_currency']
+
+    if 'purchase_rate_in_root_currency' in redeemed_split:
+        redeemed_split['purchase_value_in_root_currency'] = quantity * redeemed_split['purchase_rate_in_root_currency']
+        redeemed_split['capital_gains_in_root_currency'] = redeemed_split['sale_value_in_root_currency'] - redeemed_split['purchase_value_in_root_currency']
 
     return redeemed_split
 
@@ -110,7 +116,8 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
                         # Make a copy of the split for reporting
                         redeemed_split = calculate_redeemed_split(quantity, units[0], split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
-                        account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
+                        if 'capital_gains_in_root_currency' in redeemed_split:
+                            account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
                         account_entry['splits'].append(redeemed_split)
 
                     # And modify the original split to remove the redeemed quantity
@@ -124,7 +131,8 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
                     if (split.transaction.post_date >= args.fy_start_date) and (split.transaction.post_date <= args.fy_end_date):
                         redeemed_split = calculate_redeemed_split(purchase_split_entry['quantity'], purchase_split_entry, split, root_currency)
                         account_entry['value'] += redeemed_split['capital_gains']
-                        account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
+                        if 'capital_gains_in_root_currency' in redeemed_split:
+                            account_entry['value_in_root_currency'] += redeemed_split['capital_gains_in_root_currency']
                         account_entry['splits'].append(redeemed_split)
 
                     quantity -= purchase_split_entry['quantity']
@@ -212,8 +220,8 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate tax report')
     parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
-    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2021')
-    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2022')
+    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2022')
+    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2023')
 
     parser.add_argument('--currency', type=str, help='Restrict report to specified currency', default=None)
 

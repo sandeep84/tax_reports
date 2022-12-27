@@ -22,9 +22,13 @@
     <td>{{split["sale_date"]}}</td>
     <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
     <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
+    {% if split['purchase_exchange_rate'] is not none %}
     <td title="{{account['currency']}}/{{root_currency}} = {{split['purchase_exchange_rate']}}">{{format_currency(split["purchase_value_in_root_currency"], root_currency)}}</td>
+    {% endif %}
     <td title="{{account['currency']}}/{{root_currency}} = {{split['sale_exchange_rate']}}">{{format_currency(split["sale_value_in_root_currency"], root_currency)}}</td>
+    {% if 'capital_gains_in_root_currency' in split %}
     <td>{{format_currency(split["capital_gains_in_root_currency"], root_currency)}}</td>
+    {% endif %}
 </tr>
 {% endfor %}
 {% endif %}
