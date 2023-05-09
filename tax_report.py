@@ -7,6 +7,7 @@ from collections import deque
 import copy
 import io
 from decimal import Decimal
+import logging
 
 def get_source_account(split):
     sourceAccounts = []
@@ -109,6 +110,9 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
             # A redemption
             quantity = -split.quantity # The quantity to be removed from the oldest splits
             while quantity > 0:
+                if len(units) == 0:
+                    logging.error(f'Unable to find purchase transaction for redemption from account {account.name} on date {split.transaction.post_date}')
+                    exit(-1)
                 if units[0]['quantity'] > quantity:
                     # The redemption is a part of the oldest purchase
             
@@ -220,8 +224,8 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate tax report')
     parser.add_argument('--book', type=str, help='GNUCash file', default='HomeAccounts.gnucash')
-    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='04/04/2022')
-    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='03/04/2023')
+    parser.add_argument('--fy_start_date', type=str, help='Financial year start date', default='01/04/2022')
+    parser.add_argument('--fy_end_date', type=str, help='Financial year end date', default='31/03/2023')
 
     parser.add_argument('--currency', type=str, help='Restrict report to specified currency', default=None)
 
