@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--book", "C:\\Users\\sande\\Documents\\Accounts\\HomeAccounts.gnucash"]
+            "args": ["--book", "C:\\Users\\sande\\Documents\\Accounts\\HomeAccounts.gnucash", "--currency=INR"]
         }
     ]
 }

@@ -81,7 +81,7 @@ def calculate_redeemed_split(account, quantity, purchase_split_entry, sale_split
 
     return redeemed_split
 
-def process_capital_gains(account, parent_account_entry, root_currency, summary):
+def process_capital_gains(account, parent_account_entry, root_currency, summary, currency_filter):
     account_entry = {
         'guid': account.guid,
         'name': account.name,
@@ -94,6 +94,9 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
         'splits': [],
         'children': [],
     }
+
+    if currency_filter is not None and account_entry['currency'] != currency_filter:
+        return account_entry
 
     units = deque()
 
@@ -143,7 +146,7 @@ def process_capital_gains(account, parent_account_entry, root_currency, summary)
 
     return account_entry
 
-def process_income_expense_account(account, parent_account_entry, root_currency, summary):
+def process_income_expense_account(account, parent_account_entry, root_currency, summary, currency_filter):
     account_entry = {
         'guid': account.guid,
         'name': account.name,
@@ -156,6 +159,9 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
         'splits': {},
         'children': [],
     }
+
+    if currency_filter is not None and account_entry['currency'] != currency_filter:
+        return account_entry
 
     splits = sorted(account.splits, key=lambda x: x.transaction.post_date)
     for split in splits:
@@ -190,9 +196,9 @@ def process_income_expense_account(account, parent_account_entry, root_currency,
 
 def summarise_account(account, parent_account_entry, root_currency, summary, currency_filter):
     if account.type in ['INCOME', 'EXPENSE']:
-        account_entry = process_income_expense_account(account, parent_account_entry, root_currency, summary)
+        account_entry = process_income_expense_account(account, parent_account_entry, root_currency, summary, currency_filter)
     elif account.type in ['ASSET', 'EQUITY', 'STOCK', 'MUTUAL']:
-        account_entry = process_capital_gains(account, parent_account_entry, root_currency, summary)
+        account_entry = process_capital_gains(account, parent_account_entry, root_currency, summary, currency_filter)
     elif account.type in ['ROOT', 'BANK', 'CASH', 'LIABILITY', 'CREDIT']:
         account_entry = None
     else:
@@ -212,7 +218,6 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
             account_entry['sub_total_in_root_currency'] += child_entry['sub_total_in_root_currency']
 
     if account_entry is not None \
-        and (currency_filter==None or account_entry['currency'] == currency_filter) \
         and (account_entry['sub_total'] != 0 \
             or len(account_entry['children']) > 0
             or len(account_entry['splits']) > 0
