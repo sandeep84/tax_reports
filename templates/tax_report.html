@@ -26,9 +26,9 @@
     {% for account_type in summary %}
         <h3>{{account_type}}</h3>
         {% if account_type not in ('ASSET', 'EQUITY', 'STOCK', 'MUTUAL') %}
-            {{ income_expense_table.add_table(account_type, summary[account_type], root_currency) }}
+            {{ income_expense_table.add_table(account_type, summary[account_type], root_currency, currency_filter) }}
         {% else %}
-            {{ capital_gains_table.add_table(account_type, summary[account_type], root_currency) }}
+            {{ capital_gains_table.add_table(account_type, summary[account_type], root_currency, currency_filter) }}
         {% endif %}
     {% endfor %}
 </body>

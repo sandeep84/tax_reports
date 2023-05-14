@@ -253,4 +253,4 @@ if __name__ == '__main__':
     template.globals['format_currency'] = babel.numbers.format_currency
 
     with io.open('tax_report_out.html', "w", encoding="utf-8") as output_file:
-        output_file.write(template.render(summary=summary, root_currency=root_currency.mnemonic))
+        output_file.write(template.render(summary=summary, root_currency=root_currency.mnemonic, currency_filter=args.currency))
