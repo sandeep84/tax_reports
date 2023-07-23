@@ -4,31 +4,51 @@
 <html>
 <head>
     <title>Tax report</title>
-    
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.js'></script>
-    <script src='https://code.jquery.com/ui/1.13.0/jquery-ui.min.js'></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/jquery-treetable@3.2.0-1/jquery.treetable.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/jquery-treetable@3.2.0-1/css/jquery.treetable.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/jquery-treetable@3.2.0-1/css/jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
-    <script>
-        $(document).ready(function() {
-        {% for account_type in summary %}
-            $("#account_info_{{account_type}}").treetable({
-                expandable:true
-            });
+    <style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            font-size: small;
+        }
+
+        body {
+            counter-reset: h0_counter;
+        }
+
+        {% for level in range(1,20) %}
+        h{{level}} {
+            counter-reset: h{{level}}_counter;
+        }
+
+        h{{level}}:before {
+            counter-increment: h{{level-1}}_counter;
+            content: 
+            {%- for i in range(level) -%}
+                counter(h{{i}}_counter) "."
+            {%- endfor -%}
+            ;
+        }
         {% endfor %}
-        });
-    </script>
+
+    </style>
 </head>
 
 <body>
     {% for account_type in summary %}
-        <h3>{{account_type}}</h3>
+        {% if account_type == 'ASSET' %}
+        <h1>Capital gains statement</h1>
+        {% elif account_type == 'INCOME' %}
+        <h1>Income statement</h1>
+        {% elif account_type == 'EXPENSE' %}
+        <h1>Tax-deductable expenses</h1>
+        {% endif %}
+
         {% if account_type not in ('ASSET', 'EQUITY', 'STOCK', 'MUTUAL') %}
-            {{ income_expense_table.add_table(account_type, summary[account_type], root_currency, currency_filter) }}
+            {{ income_expense_table.add_table(account_type, summary[account_type], root_currency, currency_filter, 2) }}
         {% else %}
-            {{ capital_gains_table.add_table(account_type, summary[account_type], root_currency, currency_filter) }}
+            {{ capital_gains_table.add_table(account_type, summary[account_type], root_currency, currency_filter, 2) }}
         {% endif %}
     {% endfor %}
 </body>

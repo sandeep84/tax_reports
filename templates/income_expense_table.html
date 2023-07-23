@@ -1,62 +1,58 @@
-{% macro add_table_rows(account_list, root_currency, parent_id, currency_filter) -%}
-        {% for account in account_list %}
-        <tr data-tt-id="{{ account['guid'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
-            <td colspan="3">{{ account["name"] }}</td>
-            <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
-            <td>{% if account["sub_total"] != 0 %}{{ format_currency(account["sub_total"], account["currency"]) }}{% endif %}</td>
+{% macro add_table_rows(account_list, root_currency, parent_id, currency_filter, level) -%}
+    {% for account in account_list %}
+    <div id="{{ account["name"] }}">
+        <h{{level}}>{{ account["name"] }}</h{{level}}>
+        {% if account["sub_total"] != 0 %}<p>Sub-total: {{ format_currency(account["sub_total"], account["currency"]) }}</p>{% endif %}
+        {% if account["splits"]|length != 0 %}
+        <table class="styled-table" id="account_info_{{account_type}}">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Value</th>
+                    <th>Sub-total</th>
             {% if currency_filter is none %}
-            <td>{% if account["value_in_root_currency"] != 0 %}{{ format_currency(account["value_in_root_currency"], root_currency) }}{% endif %}</td>
-            <td>{% if account["sub_total_in_root_currency"] != 0 %}{{ format_currency(account["sub_total_in_root_currency"], root_currency) }}{% endif %}</td>
+                    <th>Value ({{root_currency}})</th>
+                    <th>Sub-total ({{root_currency}})</th>
             {% endif %}
-        </tr>
-        {% if account["splits"]|length > 0 %}
-        {% for category in account["splits"] %}
-        <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}" data-tt-parent-id="{{ account['guid'] }}">
-            <td colspan="3">&lt-&gt {{category}}</td>
-            <td></td>
-            <td>{{ format_currency(account["splits"][category]["sub_total"], account["currency"]) }}</td>
-            {% if currency_filter is none %}
-            <td></td>
-            <td>{{ format_currency(account["splits"][category]["sub_total_in_root_currency"], root_currency) }}</td>
-            {% endif %}
-        </tr>
-            {% for split in account["splits"][category]["splits"] %}
-            <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}_{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}_split_{{ category }}">
-                <td width="200px">{{split["date"]}}</td>
-                <td>{{split["description"]}}</td>
-                <td></td>
-                <td>{{format_currency(split["value"], account["currency"])}}</td>
-                <td></td>
-                {% if currency_filter is none %}
-                <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
-                <td></td>
-                {% endif %}
-            </tr>
+                </tr>
+            </thead>
+            <tbody>
+            {% for category in account["splits"] %}
+                <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}" data-tt-parent-id="{{ account['guid'] }}">
+                    <td colspan="2"><b>{{category}}</b></td>
+                    <td></td>
+                    <td><b>{{ format_currency(account["splits"][category]["sub_total"], account["currency"]) }}</b></td>
+                    {% if currency_filter is none %}
+                    <td></td>
+                    <td><b>{{ format_currency(account["splits"][category]["sub_total_in_root_currency"], root_currency) }}</b></td>
+                    {% endif %}
+                </tr>
+                {% for split in account["splits"][category]["splits"] %}
+                <tr data-tt-id="{{ account['guid'] }}_split_{{ category }}_{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}_split_{{ category }}">
+                    <td width="200px">{{split["date"]}}</td>
+                    <td>{{split["description"]}}</td>
+                    <td>{{format_currency(split["value"], account["currency"])}}</td>
+                    <td></td>
+                    {% if currency_filter is none %}
+                    <td title="{{account['currency']}}/{{root_currency}} = {{split['exchange_rate']}}">{{format_currency(split["value_in_root_currency"], root_currency)}}</td>
+                    <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
+
+            </tbody>
+        </table>
         {% endif %}
 
         {% if account["children"]|length > 0 %}
-            {{ add_table_rows(account["children"], root_currency, account['guid']) }}
+            {{ add_table_rows(account["children"], root_currency, account['guid'], currency_filter, level+1) }}
         {% endif %}
+    </div>
     {% endfor %}
 {%- endmacro %}
 
-{% macro add_table(account_type, account_summary, root_currency, currency_filter) %}
-<table class="styled-table" id="account_info_{{account_type}}">
-    <thead>
-        <tr>
-            <th colspan="3">Description</th>
-            <th>Value</th>
-            <th>Sub-total</th>
-    {% if currency_filter is none %}
-            <th>Value ({{root_currency}})</th>
-            <th>Sub-total ({{root_currency}})</th>
-    {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {{ add_table_rows(account_summary, root_currency, 0, currency_filter) }}
-    </tbody>
-</table>
+{% macro add_table(account_type, account_summary, root_currency, currency_filter, level) %}
+        {{ add_table_rows(account_summary, root_currency, 0, currency_filter, level) }}
 {% endmacro %}

@@ -221,7 +221,7 @@ def summarise_account(account, parent_account_entry, root_currency, summary, cur
         and (account_entry['sub_total'] != 0 \
             or len(account_entry['children']) > 0
             or len(account_entry['splits']) > 0
-        ):
+        ) and (account.name not in ['Mobile', 'Health', 'Shopping', 'Misc', 'Dining', 'Gifts']):
         insert_account_entry(account_entry, parent_account_entry, summary)
 
     return account_entry

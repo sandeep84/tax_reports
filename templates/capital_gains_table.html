@@ -1,68 +1,57 @@
-{% macro add_table_rows(account_list, root_currency, parent_id, currency_filter) -%}
-{% for account in account_list %}
-<tr data-tt-id="{{ account['guid'] }}" {%- if parent_id != 0 %} data-tt-parent-id="{{parent_id}}" {%- endif -%}>
-    <td>{{ account["name"] }}</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td>{% if account["value"] != 0 %}{{ format_currency(account["value"], account["currency"]) }}{% endif %}</td>
-    {% if currency_filter is none %}
-    <td></td>
-    <td></td>
-    <td>{% if account["value_in_root_currency"] != 0 %}{{ format_currency(account["value_in_root_currency"], root_currency) }}{% endif %}</td>
-    {% endif %}
-</tr>
-{% if account["splits"]|length > 0 %}
-{% for split in account["splits"] %}
-<tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
-    <td>{{split["description"]}}</td>
-    <td>{{split["quantity"]}}</td>
-    <td>{{split["purchase_date"]}}</td>
-    <td>{{format_currency(split["purchase_value"], account["currency"])}}</td>
-    <td>{{split["sale_date"]}}</td>
-    <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
-    <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
-    {% if currency_filter is none %}
-        {% if split['purchase_exchange_rate'] is not none %}
-    <td title="{{account['currency']}}/{{root_currency}} = {{split['purchase_exchange_rate']}}">{{format_currency(split["purchase_value_in_root_currency"], root_currency)}}</td>
+{% macro add_table_rows(account_list, root_currency, parent_id, currency_filter, level) -%}
+    {% for account in account_list %}
+        <div id="{{ account["name"] }}">
+            <h{{level}}>{{ account["name"] }}</h{{level}}>
+            <p>{% if account["value"] != 0 %}Sub-total: {{ format_currency(account["value"], account["currency"]) }}{% endif %}</p>
+        {% if account["splits"]|length > 0 %}
+            <table class="styled-table" id="account_info_{{account_type}}">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Purchase date</th>
+                        <th>Purchase value</th>
+                        <th>Sale date</th>
+                        <th>Sale value</th>
+                        <th>Capital gains</th>
+                        {% if currency_filter is none %}
+                        <th>Purchase value ({{root_currency}})</th>
+                        <th>Sale value ({{root_currency}})</th>
+                        <th>Capital gains ({{root_currency}})</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+            {% for split in account["splits"] %}
+                    <tr data-tt-id="{{ account['guid'] }}_split{{ loop.index }}" data-tt-parent-id="{{ account['guid'] }}">
+                        <td>{{split["description"]}}</td>
+                        <td>{{split["quantity"]}}</td>
+                        <td>{{split["purchase_date"]}}</td>
+                        <td>{{format_currency(split["purchase_value"], account["currency"])}}</td>
+                        <td>{{split["sale_date"]}}</td>
+                        <td>{{format_currency(split["sale_value"], account["currency"])}}</td>
+                        <td>{{format_currency(split["capital_gains"], account["currency"])}}</td>
+                        {% if currency_filter is none %}
+                            {% if split['purchase_exchange_rate'] is not none %}
+                        <td title="{{account['currency']}}/{{root_currency}} = {{split['purchase_exchange_rate']}}">{{format_currency(split["purchase_value_in_root_currency"], root_currency)}}</td>
+                            {% endif %}
+                        <td title="{{account['currency']}}/{{root_currency}} = {{split['sale_exchange_rate']}}">{{format_currency(split["sale_value_in_root_currency"], root_currency)}}</td>
+                            {% if 'capital_gains_in_root_currency' in split %}
+                        <td>{{format_currency(split["capital_gains_in_root_currency"], root_currency)}}</td>
+                            {% endif %}
+                        {% endif %}
+                    </tr>
+            {% endfor %}
+                </tbody>
+            </table>
         {% endif %}
-    <td title="{{account['currency']}}/{{root_currency}} = {{split['sale_exchange_rate']}}">{{format_currency(split["sale_value_in_root_currency"], root_currency)}}</td>
-        {% if 'capital_gains_in_root_currency' in split %}
-    <td>{{format_currency(split["capital_gains_in_root_currency"], root_currency)}}</td>
-        {% endif %}
-    {% endif %}
-</tr>
-{% endfor %}
-{% endif %}
 
-{% if account["children"]|length > 0 %}
-    {{ add_table_rows(account["children"], root_currency, account['guid']) }}
-{% endif %}
-{% endfor %}
+        {% if account["children"]|length > 0 %}
+            {{ add_table_rows(account["children"], root_currency, account['guid'], currency_filter, level+1) }}
+        {% endif %}
+    {% endfor %}
 {%- endmacro %}
 
-{% macro add_table(account_type, account_summary, root_currency, currency_filter) %}
-<table class="styled-table" id="account_info_{{account_type}}">
-    <thead>
-        <tr>
-            <th>Description</th>
-            <th>Quantity</th>
-            <th>Purchase date</th>
-            <th>Purchase value</th>
-            <th>Sale date</th>
-            <th>Sale value</th>
-            <th>Capital gains</th>
-            {% if currency_filter is none %}
-            <th>Purchase value ({{root_currency}})</th>
-            <th>Sale value ({{root_currency}})</th>
-            <th>Capital gains ({{root_currency}})</th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {{ add_table_rows(account_summary, root_currency, 0, currency_filter) }}
-    </tbody>
-</table>
+{% macro add_table(account_type, account_summary, root_currency, currency_filter, level) %}
+    {{ add_table_rows(account_summary, root_currency, 0, currency_filter, level) }}
 {% endmacro %}
